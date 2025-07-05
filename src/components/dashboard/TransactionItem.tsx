@@ -26,18 +26,20 @@ export function TransactionItem({
   onDelete,
 }: TransactionItemProps) {
   return (
-    <div className="grid grid-cols-12 gap-4 px-3 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
+    <div className="group grid grid-cols-12 gap-4 px-4 py-4 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 rounded-xl transition-all duration-200 hover:shadow-sm border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50">
       <div className="col-span-5 flex items-center gap-3">
         <div
-          className={`h-2 w-2 rounded-full ${
-            transaction.type === 'income' ? 'bg-emerald-500' : 'bg-red-500'
+          className={`h-3 w-3 rounded-full shadow-sm ${
+            transaction.type === 'income'
+              ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-emerald-200'
+              : 'bg-gradient-to-r from-red-400 to-red-500 shadow-red-200'
           }`}
         ></div>
-        <div>
-          <p className="text-sm font-medium text-slate-900 dark:text-white">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
             {transaction.description}
           </p>
-          <p className="text-xs text-slate-500 capitalize">
+          <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
             {transaction.category}
           </p>
         </div>
@@ -45,7 +47,9 @@ export function TransactionItem({
       <div className="col-span-2 text-right">
         <p
           className={`text-sm font-semibold ${
-            transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'
+            transaction.type === 'income'
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-red-600 dark:text-red-400'
           }`}
         >
           {transaction.type === 'income' ? '+' : '-'}$
@@ -57,15 +61,15 @@ export function TransactionItem({
           {new Date(transaction.date).toLocaleDateString()}
         </p>
       </div>
-      <div className="col-span-2 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="col-span-2 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+          className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:scale-110 transition-all duration-200 rounded-lg"
           onClick={() => onEdit(index)}
         >
           <svg
-            className="h-3 w-3 text-blue-600"
+            className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -81,10 +85,10 @@ export function TransactionItem({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+          className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 hover:scale-110 transition-all duration-200 rounded-lg"
           onClick={() => onDelete(index)}
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

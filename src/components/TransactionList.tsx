@@ -26,7 +26,7 @@ import {
 import { getTransactions, deleteTransaction } from '@/app/actions';
 import { Transaction } from '@/lib/schema';
 import { toast } from 'sonner';
-import { DemoDataButton } from './DemoDataButton';
+// import { DemoDataButton } from './DemoDataButton';
 import { HelpfulTipsCarousel } from './HelpfulTipsCarousel';
 import { AddTransaction } from './AddTransaction';
 
@@ -82,7 +82,7 @@ export function TransactionList() {
           </div>
           <div className="flex gap-3 justify-center">
             <AddTransaction />
-            <DemoDataButton onDataAdded={fetchTransactions} />
+            {/* <DemoDataButton onDataAdded={fetchTransactions} /> */}
           </div>
         </div>
         <HelpfulTipsCarousel />

@@ -16,6 +16,9 @@ interface PieChartData {
   color: string;
 }
 
+
+
+
 interface CategoryPieChartProps {
   data?: Record<string, number>;
 }
@@ -40,7 +43,16 @@ export function CategoryPieChart({ data = {} }: CategoryPieChartProps) {
     })
   );
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: Array<{
+      name: string;
+      value: number;
+      payload: PieChartData;
+    }>;
+  }
+
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
@@ -104,10 +116,23 @@ export function CategoryPieChart({ data = {} }: CategoryPieChartProps) {
           <Legend
             verticalAlign="bottom"
             height={36}
-            formatter={(value, entry: any) => (
-              <span className="text-sm text-slate-700 dark:text-slate-300">
-                {value} (${entry.payload.value.toFixed(0)})
-              </span>
+            content={({ payload }) => (
+              <ul className="flex flex-wrap justify-center gap-4 m-0 p-0 list-none">
+                {payload?.map((entry: any, index: number) => (
+                  <li
+                    key={`item-${index}`}
+                    className="flex items-center space-x-2"
+                  >
+                    <span
+                      className="inline-block w-3 h-3 rounded-full"
+                      style={{ backgroundColor: entry.color }}
+                    ></span>
+                    <span className="text-sm text-slate-700 dark:text-slate-200">
+                      {entry.value} (${entry.payload.value.toFixed(0)})
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           />
         </PieChart>

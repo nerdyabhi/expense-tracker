@@ -103,7 +103,7 @@ export async function getUserData(): Promise<UserData> {
     await ensureDataDir();
     const data = await fs.readFile(USER_DATA_FILE, 'utf-8');
     return JSON.parse(data);
-  } catch (error) {
+  } catch (err) {
     // If file doesn't exist, create it with default data
     return await initializeUserData();
   }

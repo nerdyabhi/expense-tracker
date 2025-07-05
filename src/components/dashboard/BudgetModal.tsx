@@ -10,19 +10,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Target } from 'lucide-react';
 import { BudgetForm } from '@/components/BudgetForm';
+import { Budget } from '@/types/dashboard';
 
 interface BudgetModalProps {
   isOpen: boolean;
-  editingBudget: any;
+  editingBudget: Budget | null;
   onClose: () => void;
-  onSave: (budgetData: any) => void;
+  onSuccess: (budget: Budget) => void;
 }
 
 export function BudgetModal({
   isOpen,
   editingBudget,
   onClose,
-  onSave,
+  onSuccess,
 }: BudgetModalProps) {
   if (!isOpen) return null;
 
@@ -77,7 +78,7 @@ export function BudgetModal({
           <BudgetForm
             budget={editingBudget}
             onClose={onClose}
-            onSave={onSave}
+            onSuccess={onSuccess}
           />
         </CardContent>
       </Card>

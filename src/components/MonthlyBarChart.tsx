@@ -9,16 +9,22 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { getTransactions } from '@/app/actions';
-import { useEffect, useState } from 'react';
-import { Transaction } from '@/lib/schema';
+import { useEffect, useState, useMemo } from 'react';
+import { Transaction } from '@/types/dashboard';
 import { format } from 'date-fns';
 
-export function MonthlyBarChart() {
+interface MonthlyBarChartProps {
+  transactions?: Transaction[];
+  demo?: boolean;
+}
+
+export function MonthlyBarChart({
+  transactions = [],
+  demo = false,
+}: MonthlyBarChartProps) {
   const [data, setData] = useState<
     { month: string; amount: number; color: string }[]
   >([]);
-  const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
 
@@ -38,40 +44,84 @@ export function MonthlyBarChart() {
     '#a855f7', // Purple
   ];
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const transactions = await getTransactions();
+  const demoData = useMemo(
+    () => [
+      { month: 'Jan', amount: 1200, color: colorPalette[0] },
+      { month: 'Feb', amount: 1500, color: colorPalette[1] },
+      { month: 'Mar', amount: 1300, color: colorPalette[2] },
+      { month: 'Apr', amount: 1800, color: colorPalette[3] },
+      { month: 'May', amount: 1600, color: colorPalette[4] },
+      { month: 'Jun', amount: 2100, color: colorPalette[5] },
+    ],
+    [colorPalette]
+  );
 
-        // Group transactions by month
-        const monthlyData = transactions.reduce(
-          (acc: { [key: string]: number }, transaction: Transaction) => {
-            const month = format(new Date(transaction.date), 'MMM yyyy');
-            acc[month] = (acc[month] || 0) + transaction.amount;
-            return acc;
-          },
-          {}
-        );
+  // Calculate chart data from transactions prop
+  const chartData = useMemo(() => {
+    console.log('📊 MonthlyBarChart - Calculating chart data');
+    console.log('📊 Transactions received:', transactions?.length || 0);
+    console.log('📊 Sample transaction:', transactions?.[0]);
 
-        // Convert to array format for Recharts with colors
-        const chartData = Object.entries(monthlyData).map(
-          ([month, amount], index) => ({
-            month,
-            amount,
-            color: colorPalette[index % colorPalette.length],
-          })
-        );
-
-        setData(chartData);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      } finally {
-        setLoading(false);
-      }
+    if (!transactions || transactions.length === 0) {
+      return [];
     }
 
-    fetchData();
-  }, []);
+    // Group transactions by month
+    const monthlyData = transactions.reduce(
+      (acc: { [key: string]: number }, transaction: Transaction) => {
+        // Handle different date formats
+        let transactionDate;
+        try {
+          transactionDate = new Date(transaction.date);
+          // Check if the date is valid
+          if (isNaN(transactionDate.getTime())) {
+            console.warn('Invalid date:', transaction.date);
+            return acc;
+          }
+        } catch (error) {
+          console.warn('Error parsing date:', transaction.date, error);
+          return acc;
+        }
+
+        const month = format(transactionDate, 'MMM yyyy');
+        console.log('📊 Processing transaction:', {
+          description: transaction.description,
+          date: transaction.date,
+          parsedDate: transactionDate,
+          month,
+          amount: transaction.amount,
+          type: transaction.type,
+        });
+
+        // Only count expenses for the chart (treat missing type as expense)
+        if (!transaction.type || transaction.type === 'expense') {
+          acc[month] = (acc[month] || 0) + transaction.amount;
+        }
+        return acc;
+      },
+      {}
+    );
+
+    console.log('📊 Monthly data:', monthlyData);
+
+    // Convert to array format for Recharts with colors
+    const result = Object.entries(monthlyData)
+      .map(([month, amount], index) => ({
+        month,
+        amount,
+        color: colorPalette[index % colorPalette.length],
+      }))
+      .sort(
+        (a, b) => new Date(a.month).getTime() - new Date(b.month).getTime()
+      );
+
+    console.log('📊 Chart data result:', result);
+    return result;
+  }, [transactions]);
+
+  useEffect(() => {
+    setData(demo ? demoData : chartData);
+  }, [chartData, demo, demoData]);
 
   // Handle bar click for filtering
   const handleBarClick = (data: any) => {
@@ -143,19 +193,9 @@ export function MonthlyBarChart() {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="w-full h-full bg-white/50 dark:bg-slate-800/50 rounded-lg animate-pulse flex items-center justify-center backdrop-blur-sm">
-        <div className="text-slate-500 dark:text-slate-400 text-sm">
-          Loading chart...
-        </div>
-      </div>
-    );
-  }
-
   if (data.length === 0) {
     return (
-      <div className="w-full h-full bg-white/50 dark:bg-slate-800/50 rounded-lg flex items-center justify-center backdrop-blur-sm">
+      <div className="w-full h-full rounded-lg flex items-center justify-center backdrop-blur-sm">
         <div className="text-center">
           <div className="text-slate-600 dark:text-slate-400 mb-1 font-medium">
             No data yet
@@ -169,7 +209,7 @@ export function MonthlyBarChart() {
   }
 
   return (
-    <div className="w-full h-full bg-white/95 dark:bg-slate-900/95 rounded-lg p-3 backdrop-blur-sm border border-white/30 dark:border-slate-700/50">
+    <div className="w-full h-full rounded-lg p-3 backdrop-blur-sm">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -200,18 +240,18 @@ export function MonthlyBarChart() {
               if (active && payload && payload.length) {
                 const data = payload[0].payload;
                 return (
-                  <div className="bg-white/98 dark:bg-slate-800/98 p-3 rounded-lg border border-slate-200 dark:border-slate-600 shadow-lg backdrop-blur-sm">
-                    <p className="font-semibold text-slate-900 dark:text-white text-sm mb-1">
+                  <div className="bg-slate-50/95 dark:bg-slate-900/95 p-3 rounded-lg border border-slate-200/50 dark:border-slate-700/50 shadow-xl backdrop-blur-md">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-1">
                       {label}
                     </p>
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="w-3 h-3 rounded-full shadow-sm"
                         style={{ backgroundColor: data.color }}
                       ></div>
                       <span className="text-slate-600 dark:text-slate-300 text-sm">
                         Amount:{' '}
-                        <span className="font-bold">
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
                           ${data.amount.toFixed(2)}
                         </span>
                       </span>

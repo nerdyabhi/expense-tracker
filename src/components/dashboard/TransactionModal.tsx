@@ -8,16 +8,26 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Edit3 } from 'lucide-react';
 import { SimpleTransactionForm } from '@/components/SimpleTransactionForm';
+import { Transaction } from '@/types/dashboard';
 
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editingTransaction?: Transaction | null;
+  onSuccess?: (transaction: Transaction) => void;
 }
 
-export function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
+export function TransactionModal({
+  isOpen,
+  onClose,
+  editingTransaction = null,
+  onSuccess,
+}: TransactionModalProps) {
   if (!isOpen) return null;
+
+  const isEditing = !!editingTransaction;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -30,13 +40,27 @@ export function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
         <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-blue-600 to-slate-700 flex items-center justify-center">
-                <Plus className="h-5 w-5 text-white" />
+              <div
+                className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                  isEditing
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-600'
+                    : 'bg-gradient-to-r from-blue-600 to-slate-700'
+                }`}
+              >
+                {isEditing ? (
+                  <Edit3 className="h-5 w-5 text-white" />
+                ) : (
+                  <Plus className="h-5 w-5 text-white" />
+                )}
               </div>
               <div>
-                <CardTitle className="text-lg">Add Transaction</CardTitle>
+                <CardTitle className="text-lg">
+                  {isEditing ? 'Edit Transaction' : 'Add Transaction'}
+                </CardTitle>
                 <CardDescription>
-                  Record a new expense or income entry
+                  {isEditing
+                    ? 'Update your transaction details'
+                    : 'Record a new expense or income entry'}
                 </CardDescription>
               </div>
             </div>
@@ -63,7 +87,11 @@ export function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          <SimpleTransactionForm onClose={onClose} />
+          <SimpleTransactionForm
+            onClose={onClose}
+            transaction={editingTransaction}
+            onSuccess={onSuccess}
+          />
         </CardContent>
       </Card>
     </div>

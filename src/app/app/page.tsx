@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Toaster, toast } from 'sonner';
-import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+
+// Import server actions
+import { deleteTransaction } from '@/app/actions';
 
 // Import components
 import { Header } from '@/components/dashboard/Header';
@@ -17,95 +19,79 @@ import { TransactionModal } from '@/components/dashboard/TransactionModal';
 import { Transaction, Budget, DashboardData } from '@/types/dashboard';
 
 export default function Dashboard() {
-  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(
     null
   );
 
   // Fetch dashboard data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [dashboardRes, transactionsRes] = await Promise.all([
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [dashboardRes, transactionsRes, allTransactionsRes] =
+        await Promise.all([
           fetch('/api/dashboard'),
-          fetch('/api/transactions?limit=10'),
+          fetch('/api/transactions?limit=10'), // For recent transactions display
+          fetch('/api/transactions'), // All transactions for analytics
         ]);
 
-        const dashboard = await dashboardRes.json();
-        const transactionsData = await transactionsRes.json();
+      const dashboard = await dashboardRes.json();
+      const transactionsData = await transactionsRes.json();
+      const allTransactionsData = await allTransactionsRes.json();
 
-        setDashboardData(dashboard);
-        setTransactions(transactionsData.transactions || []);
-        setBudgets(dashboard.budgets || []);
-      } catch (error) {
-        toast.error('Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
+      console.log('🔍 Dashboard data:', dashboard);
+      console.log(
+        '🔍 Limited transactions:',
+        transactionsData.transactions?.length || 0
+      );
+      console.log(
+        '🔍 All transactions:',
+        allTransactionsData.transactions?.length || 0
+      );
+      console.log(
+        '🔍 Sample transaction:',
+        allTransactionsData.transactions?.[0]
+      );
 
+      setDashboardData(dashboard);
+      setTransactions(transactionsData.transactions || []);
+      setAllTransactions(allTransactionsData.transactions || []);
+      setBudgets(dashboard.budgets || []);
+    } catch (error) {
+      console.error('❌ Error fetching data:', error);
+      toast.error('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial data load
+  useEffect(() => {
     fetchData();
   }, []);
 
-  // Professional keyboard shortcuts
-  useKeyboardShortcuts([
-    {
-      key: 'a',
-      action: () => {
-        setIsAddTransactionOpen(true);
-        toast.success('Add Transaction', {
-          description: 'Press A anytime to add a transaction',
-          icon: '💼',
-        });
-      },
-    },
-    {
-      key: 'e',
-      action: () => {
-        toast.success('Export Data', {
-          description: 'Press E to export your data',
-          icon: '📊',
-        });
-        handleExportData();
-      },
-    },
-    {
-      key: 'b',
-      action: () => {
-        toast.success('Budget Settings', {
-          description: 'Press B to manage budgets',
-          icon: '🎯',
-        });
-        handleSetBudget();
-      },
-    },
-    {
-      key: '/',
-      action: () => {
-        toast.info('Search', {
-          description: 'Press / to search transactions',
-          icon: '🔍',
-        });
-      },
-    },
-    {
-      key: 'Escape',
-      action: () => {
-        if (isAddTransactionOpen) {
-          setIsAddTransactionOpen(false);
-          toast.info('Modal closed');
-        } else if (isBudgetModalOpen) {
-          setIsBudgetModalOpen(false);
-          toast.info('Budget modal closed');
-        }
-      },
-    },
-  ]);
+  // Handler for adding a new transaction
+  const handleAddTransaction = () => {
+    setEditingTransaction(null);
+    setIsTransactionModalOpen(true);
+  };
+
+  // Handler for editing a transaction
+  const handleEditTransaction = (index: number) => {
+    const transaction = transactions[index];
+    if (transaction) {
+      setEditingTransaction(transaction);
+      setIsTransactionModalOpen(true);
+    }
+  };
 
   const handleExportData = () => {
     toast.success('📊 Exporting your transaction data...', {
@@ -143,39 +129,99 @@ export default function Dashboard() {
     setIsBudgetModalOpen(false);
   };
 
-  const handleDeleteTransaction = (index: number) => {
-    const newTransactions = [...transactions];
-    newTransactions.splice(index, 1);
-    setTransactions(newTransactions);
-    toast.success('Transaction deleted');
+  const handleDeleteTransaction = async (index: number) => {
+    const transaction = transactions[index];
+    if (!transaction || !transaction.id) {
+      toast.error('Cannot delete transaction: Missing ID');
+      return;
+    }
+
+    try {
+      const result = await deleteTransaction(transaction.id);
+
+      if (result.success) {
+        // Remove from both transaction arrays
+        const newTransactions = transactions.filter((_, i) => i !== index);
+        const newAllTransactions = allTransactions.filter(
+          (t) => t.id !== transaction.id
+        );
+        setTransactions(newTransactions);
+        setAllTransactions(newAllTransactions);
+        toast.success('Transaction deleted successfully');
+
+        // Refresh dashboard data after deletion
+        fetchData();
+      } else {
+        toast.error(result.message || 'Failed to delete transaction');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('An error occurred while deleting the transaction');
+    }
   };
 
-  const handleEditTransaction = (index: number) => {
-    // This would open a modal with the transaction data to edit
-    toast.info('Editing transaction ' + (index + 1));
+  const handleTransactionSuccess = async (
+    newOrUpdatedTransaction: Transaction
+  ) => {
+    if (editingTransaction) {
+      // Optimistically update the list for an edited transaction
+      setAllTransactions(
+        allTransactions.map((t) =>
+          t.id === newOrUpdatedTransaction.id ? newOrUpdatedTransaction : t
+        )
+      );
+      setTransactions(
+        transactions.map((t) =>
+          t.id === newOrUpdatedTransaction.id ? newOrUpdatedTransaction : t
+        )
+      );
+    } else {
+      // Optimistically add the new transaction to the top of the list
+      setAllTransactions([newOrUpdatedTransaction, ...allTransactions]);
+      setTransactions([newOrUpdatedTransaction, ...transactions]);
+    }
+
+    // Fetch fresh data in the background to ensure consistency
+    fetchData();
+
+    // Reset editing state
+    setEditingTransaction(null);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50/50 to-slate-100/50 dark:from-slate-950 dark:via-slate-950/80 dark:to-slate-900/50">
+      {/* Background Pattern */}
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.15)_1px,transparent_0)] [background-size:20px_20px] pointer-events-none" />
+
       {/* Header */}
       <Header />
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-6 py-6">
+      <main className="relative mx-auto max-w-7xl px-6 py-8">
         {/* Page Header Section */}
-        <div className="mb-6">
-          <PageHeader onAddTransaction={() => setIsAddTransactionOpen(true)} />
+        <div className="mb-8">
+          <PageHeader
+            onAddTransaction={() => {
+              setEditingTransaction(null);
+              setIsTransactionModalOpen(true);
+            }}
+          />
 
           {/* Stats Grid */}
-          <StatsGrid dashboardData={dashboardData} loading={loading} />
+          <StatsGrid
+            // dashboardData={dashboardData}
+            transactions={allTransactions}
+            loading={loading}
+          />
         </div>
 
         {/* Two Card Layout */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2">
           {/* Analytics Card with Tabs */}
           <AnalyticsCard
             dashboardData={dashboardData}
             budgets={budgets}
+            transactions={allTransactions}
             onEditBudget={handleEditBudget}
             onSetBudget={handleSetBudget}
             onExportData={handleExportData}
@@ -184,10 +230,15 @@ export default function Dashboard() {
           {/* Transactions Card */}
           <TransactionsCard
             transactions={transactions}
+            budgets={budgets}
             loading={loading}
-            onAddTransaction={() => setIsAddTransactionOpen(true)}
+            onAddTransaction={() => {
+              setEditingTransaction(null);
+              setIsTransactionModalOpen(true);
+            }}
             onEditTransaction={handleEditTransaction}
             onDeleteTransaction={handleDeleteTransaction}
+            onBudgetUpdate={fetchData}
           />
         </div>
       </main>
@@ -197,13 +248,18 @@ export default function Dashboard() {
         isOpen={isBudgetModalOpen}
         editingBudget={editingBudget}
         onClose={() => setIsBudgetModalOpen(false)}
-        onSave={handleSaveBudget}
+        onSuccess={handleSaveBudget}
       />
 
       {/* Transaction Modal */}
       <TransactionModal
-        isOpen={isAddTransactionOpen}
-        onClose={() => setIsAddTransactionOpen(false)}
+        isOpen={isTransactionModalOpen}
+        onClose={() => {
+          setIsTransactionModalOpen(false);
+          setEditingTransaction(null);
+        }}
+        editingTransaction={editingTransaction}
+        onSuccess={handleTransactionSuccess}
       />
 
       <Toaster richColors closeButton />

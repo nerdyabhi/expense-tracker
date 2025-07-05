@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { ArrowLeft, DollarSign, Keyboard, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DemoDataButton } from '@/components/DemoDataButton';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export function Header() {
@@ -46,7 +45,7 @@ export function Header() {
             <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
               <Search className="h-4 w-4" />
             </Button>
-            <DemoDataButton />
+            {/* <DemoDataB/utton /> */}
             <ThemeToggle />
           </div>
         </div>

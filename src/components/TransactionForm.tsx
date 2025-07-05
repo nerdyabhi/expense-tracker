@@ -69,12 +69,14 @@ export function TransactionForm({
   const [suggestedCategory, setSuggestedCategory] = useState<string>('');
   const [showQuickAmounts, setShowQuickAmounts] = useState(true);
 
-  const form = useForm<z.infer<typeof transactionSchema>>({
+  const form = useForm<Transaction>({
     resolver: zodResolver(transactionSchema),
     defaultValues: defaultValues || {
+      type: 'expense',
       description: '',
+      category: 'other',
       amount: 0,
-      date: new Date(),
+      date: new Date().toISOString(),
     },
   });
 
@@ -181,7 +183,12 @@ export function TransactionForm({
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Date</FormLabel>
-              <DatePicker value={field.value} onChange={field.onChange} />
+              <DatePicker
+                value={field.value ? new Date(field.value) : undefined}
+                onChange={(date?: Date) =>
+                  field.onChange(date ? date.toISOString() : '')
+                }
+              />
               <FormMessage />
             </FormItem>
           )}

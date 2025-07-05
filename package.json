@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate": "npx tsx src/scripts/migrate-transactions.ts"
   },
   "dependencies": {
     "@heroui/kbd": "^2.2.17",

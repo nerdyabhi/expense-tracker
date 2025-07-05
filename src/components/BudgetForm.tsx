@@ -1,103 +1,187 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState, useEffect } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
-
-interface Budget {
-  category: string;
-  budget: string | number;
-  icon: string;
-  spent?: number;
-}
+import { Budget } from '@/types/dashboard';
+import { addOrUpdateBudget } from '@/app/actions';
 
 interface BudgetFormProps {
+  onClose?: () => void;
   budget?: Budget | null;
-  onClose: () => void;
-  onSave: (budget: Budget) => void;
+  onSuccess?: (budget: Budget) => void;
 }
 
-export function BudgetForm({ budget, onClose, onSave }: BudgetFormProps) {
-  const [formData, setFormData] = useState<Budget>({
+const expenseCategories = [
+  { value: 'food', label: 'Food & Dining' },
+  { value: 'transport', label: 'Transportation' },
+  { value: 'shopping', label: 'Shopping' },
+  { value: 'entertainment', label: 'Entertainment' },
+  { value: 'bills', label: 'Bills & Utilities' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'housing', label: 'Housing & Rent' },
+  { value: 'education', label: 'Education' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'other', label: 'Other' },
+];
+
+export function BudgetForm({
+  onClose,
+  budget = null,
+  onSuccess,
+}: BudgetFormProps) {
+  const isEditing = !!budget;
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    id: '',
     category: '',
     budget: '',
-    icon: '',
   });
 
+  // Initialize form with budget data when editing
   useEffect(() => {
     if (budget) {
-      setFormData(budget);
+      setFormData({
+        id: budget.id || '',
+        category: budget.category || '',
+        budget: String(budget.budget || ''),
+      });
     }
   }, [budget]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.category || !formData.budget || !formData.icon) {
-      toast.error('Please fill out all fields');
-      return;
+    setIsLoading(true);
+
+    try {
+      // Convert form data to budget object
+      const budgetData: Budget = {
+        category: formData.category,
+        budget: parseFloat(formData.budget),
+        spent: 0, // Will be calculated server-side
+      };
+
+      if (isEditing && formData.id) {
+        budgetData.id = formData.id;
+      }
+
+      // Call server action to add/update budget
+      const result = await addOrUpdateBudget(budgetData);
+
+      if (result.success) {
+        toast.success(
+          `Budget ${isEditing ? 'updated' : 'created'} successfully!`
+        );
+
+        // Call success callback with updated data
+        if (onSuccess && result.budget) {
+          onSuccess(result.budget);
+        }
+
+        // Reset form and close modal
+        if (!isEditing) {
+          setFormData({
+            id: '',
+            category: '',
+            budget: '',
+          });
+        }
+
+        onClose?.();
+      } else {
+        toast.error(
+          result.message ||
+            `Failed to ${isEditing ? 'update' : 'create'} budget`
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(`Failed to ${isEditing ? 'update' : 'create'} budget`);
+    } finally {
+      setIsLoading(false);
     }
-    onSave(formData);
-    onClose();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="category">Category</Label>
-        <Input
-          id="category"
-          placeholder="e.g., Food, Shopping"
+        <Label htmlFor="category">
+          Category <span className="text-red-500">*</span>
+        </Label>
+        <Select
           value={formData.category}
-          onChange={(e) =>
-            setFormData({ ...formData, category: e.target.value })
+          onValueChange={(value) =>
+            setFormData((prev) => ({ ...prev, category: value }))
           }
-          required
-          disabled={!!budget} // Disable if editing
-        />
+          disabled={isLoading}
+        >
+          <SelectTrigger className="h-10">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            {expenseCategories.map((category) => (
+              <SelectItem key={category.value} value={category.value}>
+                {category.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
       <div>
-        <Label htmlFor="budget">Monthly Budget ($)</Label>
+        <Label htmlFor="budget">
+          Monthly Budget Amount <span className="text-red-500">*</span>
+        </Label>
         <Input
           id="budget"
           type="number"
-          step="10"
-          placeholder="500"
-          value={formData.budget as number}
+          step="0.01"
+          placeholder="0.00"
+          value={formData.budget}
           onChange={(e) =>
-            setFormData({
-              ...formData,
-              budget: parseFloat(e.target.value) || 0,
-            })
+            setFormData((prev) => ({ ...prev, budget: e.target.value }))
           }
           required
+          className="h-10"
+          disabled={isLoading}
         />
       </div>
-      <div>
-        <Label htmlFor="icon">Icon (Emoji)</Label>
-        <Input
-          id="icon"
-          placeholder="e.g., 🍽️, 🛍️"
-          value={formData.icon}
-          onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-          required
-        />
-      </div>
+
       <div className="flex gap-3 pt-4">
         <Button
           type="button"
           variant="outline"
           onClick={onClose}
           className="flex-1"
+          disabled={isLoading}
         >
           Cancel
         </Button>
         <Button
           type="submit"
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+          disabled={isLoading || !formData.category || !formData.budget}
+          className={`flex-1 ${
+            isEditing
+              ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700'
+              : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700'
+          }`}
         >
-          Save Budget
+          {isLoading
+            ? isEditing
+              ? 'Updating...'
+              : 'Creating...'
+            : isEditing
+            ? 'Update Budget'
+            : 'Create Budget'}
         </Button>
       </div>
     </form>

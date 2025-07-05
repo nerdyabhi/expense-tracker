@@ -19,19 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { transactionSchema, Transaction } from '@/lib/schema';
 import { DatePicker } from './DatePicker';
 
-// Predefined categories with smart suggestions
-const CATEGORIES = [
-  'groceries',
-  'gas',
-  'dining',
-  'entertainment',
-  'utilities',
-  'healthcare',
-  'shopping',
-  'transport',
-  'subscription',
-  'other',
-];
 
 const CATEGORY_KEYWORDS = {
   groceries: ['grocery', 'supermarket', 'walmart', 'target', 'food', 'market'],
@@ -73,8 +60,10 @@ export function EnhancedTransactionForm({
     resolver: zodResolver(transactionSchema),
     defaultValues: defaultValues || {
       description: '',
+      category: '',
       amount: 0,
-      date: new Date(),
+      date: new Date().toISOString(),
+      type: 'expense',
     },
   });
 
@@ -175,7 +164,12 @@ export function EnhancedTransactionForm({
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Date</FormLabel>
-              <DatePicker value={field.value} onChange={field.onChange} />
+              <DatePicker
+                value={field.value ? new Date(field.value) : undefined}
+                onChange={(date: Date | undefined) => {
+                  field.onChange(date ? date.toISOString() : '');
+                }}
+              />
               <FormMessage />
             </FormItem>
           )}

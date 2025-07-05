@@ -23,7 +23,7 @@ export function BudgetList({
   onExportData,
 }: BudgetListProps) {
   return (
-    <div className="h-80 space-y-4 overflow-y-auto">
+    <div className="h-60 space-y-4 overflow-y-auto">
       {budgets.map((budget) => {
         const percentage = (budget.spent / budget.budget) * 100;
         const isOverBudget = percentage > 100;

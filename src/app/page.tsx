@@ -1,20 +1,20 @@
 import { BentoGrid, BentoGridItem } from '@/components/ui/bento-grid';
 import { BackgroundGradientAnimation } from '@/components/ui/background-gradient-animation';
 import { TextGenerateEffect } from '@/components/ui/text-generate-effect';
-import { AddTransaction } from '@/components/AddTransaction';
-import { MonthlyBarChart } from '@/components/MonthlyBarChart';
-import { TransactionList } from '@/components/TransactionList';
+import { DemoMonthlyChart } from '@/components/DemoMonthlyChart';
 import { TrustSignals } from '@/components/TrustSignals';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   BarChart3,
   Plus,
-  List,
   TrendingUp,
   DollarSign,
   Calculator,
+  ArrowRight,
 } from 'lucide-react';
 import { Toaster } from 'sonner';
+import { MovingBorderButton } from '@/components/ui/moving-border';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -82,7 +82,18 @@ export default function Home() {
             </div>
 
             <div className="flex justify-center">
-              <AddTransaction />
+              <MovingBorderButton
+                borderRadius="1.75rem"
+                className="bg-white group dark:bg-slate-900 text-black dark:text-white border-neutral-200 dark:border-slate-800"
+                containerClassName="h-12 w-48"
+              >
+                <Link href="/app" className="flex items-center gap-2">
+                  <div className="flex items-center gap-2  transition-transform duration-200">
+                    Start Tracking
+                  </div>
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1" />
+                </Link>
+              </MovingBorderButton>
             </div>
           </div>
 
@@ -98,7 +109,7 @@ export default function Home() {
               description="Track your spending patterns with an interactive bar chart"
               header={
                 <div className="w-full h-56 p-2 bg-gradient-to-br from-slate-100 to-white dark:from-slate-800 dark:to-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm">
-                  <MonthlyBarChart />
+                  <DemoMonthlyChart />
                 </div>
               }
               icon={<BarChart3 className="h-4 w-4 text-indigo-500" />}
@@ -167,19 +178,6 @@ export default function Home() {
               }
               icon={<Plus className="h-4 w-4 text-blue-500" />}
             />
-            <BentoGridItem
-              title="Recent Transactions"
-              description="View, edit, and manage all your transactions"
-              header={
-                <div className="w-full h-56 p-3 bg-gradient-to-br from-slate-50/50 to-gray-50/50 dark:from-slate-950/30 dark:to-gray-950/30 rounded-xl border border-slate-100 dark:border-slate-800/50 overflow-hidden">
-                  <div className="h-full">
-                    <TransactionList />
-                  </div>
-                </div>
-              }
-              icon={<List className="h-4 w-4 text-slate-500" />}
-              className="md:col-span-2"
-            />
           </BentoGrid>
 
           {/* Feature Highlight */}
@@ -190,7 +188,6 @@ export default function Home() {
               filter={false}
             />
             <p className="text-white/60">
-            
               Join thousands of users who have transformed their financial
               habits
             </p>
