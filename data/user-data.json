@@ -1,0 +1,70 @@
+{
+  "transactions": [
+    {
+      "id": "1",
+      "type": "expense",
+      "amount": 25.5,
+      "description": "Coffee and breakfast",
+      "category": "food",
+      "date": "2025-01-03",
+      "createdAt": "2025-07-04T18:29:24.933Z"
+    },
+    {
+      "id": "2",
+      "type": "expense",
+      "amount": 120,
+      "description": "Grocery shopping",
+      "category": "food",
+      "date": "2025-01-02",
+      "createdAt": "2025-07-04T18:29:24.933Z"
+    },
+    {
+      "id": "3",
+      "type": "income",
+      "amount": 3500,
+      "description": "Monthly salary",
+      "category": "salary",
+      "date": "2025-01-01",
+      "createdAt": "2025-07-04T18:29:24.933Z"
+    },
+    {
+      "id": "4",
+      "type": "expense",
+      "amount": 60,
+      "description": "Gas station",
+      "category": "transport",
+      "date": "2025-01-01",
+      "createdAt": "2025-07-04T18:29:24.933Z"
+    }
+  ],
+  "budgets": [
+    {
+      "category": "food",
+      "limit": 1000,
+      "spent": 847,
+      "month": "2025-01"
+    },
+    {
+      "category": "transport",
+      "limit": 600,
+      "spent": 543,
+      "month": "2025-01"
+    },
+    {
+      "category": "shopping",
+      "limit": 350,
+      "spent": 421,
+      "month": "2025-01"
+    },
+    {
+      "category": "entertainment",
+      "limit": 400,
+      "spent": 312,
+      "month": "2025-01"
+    }
+  ],
+  "settings": {
+    "currency": "USD",
+    "dateFormat": "YYYY-MM-DD"
+  }
+}
