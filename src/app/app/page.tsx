@@ -47,20 +47,6 @@ export default function Dashboard() {
       const transactionsData = await transactionsRes.json();
       const allTransactionsData = await allTransactionsRes.json();
 
-      console.log('🔍 Dashboard data:', dashboard);
-      console.log(
-        '🔍 Limited transactions:',
-        transactionsData.transactions?.length || 0
-      );
-      console.log(
-        '🔍 All transactions:',
-        allTransactionsData.transactions?.length || 0
-      );
-      console.log(
-        '🔍 Sample transaction:',
-        allTransactionsData.transactions?.[0]
-      );
-
       setDashboardData(dashboard);
       setTransactions(transactionsData.transactions || []);
       setAllTransactions(allTransactionsData.transactions || []);
@@ -208,11 +194,7 @@ export default function Dashboard() {
           />
 
           {/* Stats Grid */}
-          <StatsGrid
-            // dashboardData={dashboardData}
-            transactions={allTransactions}
-            loading={loading}
-          />
+          <StatsGrid transactions={allTransactions} loading={loading} />
         </div>
 
         {/* Two Card Layout */}

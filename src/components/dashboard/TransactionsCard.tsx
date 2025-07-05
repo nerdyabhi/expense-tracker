@@ -37,21 +37,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DateRange } from 'react-day-picker';
 
-interface Transaction {
-  id?: string;
-  description: string;
-  category: string;
-  amount: number;
-  date: string;
-  type: 'income' | 'expense';
-}
-
-interface Budget {
-  id?: string;
-  category: string;
-  budget: number;
-  spent: number;
-}
+import { Transaction, Budget } from '@/types/dashboard';
 
 interface TransactionsCardProps {
   transactions: Transaction[];
@@ -72,8 +58,6 @@ export function TransactionsCard({
   onDeleteTransaction,
   onBudgetUpdate,
 }: TransactionsCardProps) {
-  console.log('TransactionsCard received transactions:', transactions.length);
-
   // Filter state
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>(
     'all'
@@ -97,18 +81,8 @@ export function TransactionsCard({
 
   // Filter transactions based on active filters
   const filteredTransactions = transactions.filter((transaction) => {
-    // Debug logging
-    console.log('Filtering transaction:', transaction, 'with filters:', {
-      typeFilter,
-      dateFilter,
-      minAmount,
-      maxAmount,
-      categoryFilter,
-    });
-
     // Type filter
     if (typeFilter !== 'all' && transaction.type !== typeFilter) {
-      console.log('Filtered out by type:', transaction.type, 'vs', typeFilter);
       return false;
     }
 
@@ -117,14 +91,12 @@ export function TransactionsCard({
       dateFilter === 'thisMonth' &&
       !isThisMonth(new Date(transaction.date))
     ) {
-      console.log('Filtered out by thisMonth:', transaction.date);
       return false;
     }
 
     if (dateFilter === 'custom' && dateRange.from && dateRange.to) {
       const transactionDate = new Date(transaction.date);
       if (transactionDate < dateRange.from || transactionDate > dateRange.to) {
-        console.log('Filtered out by custom date range:', transaction.date);
         return false;
       }
     }
@@ -132,21 +104,9 @@ export function TransactionsCard({
     // Amount filter
     const transactionAmount = Math.abs(transaction.amount);
     if (minAmount && transactionAmount < parseFloat(minAmount)) {
-      console.log(
-        'Filtered out by min amount:',
-        transactionAmount,
-        'vs',
-        minAmount
-      );
       return false;
     }
     if (maxAmount && transactionAmount > parseFloat(maxAmount)) {
-      console.log(
-        'Filtered out by max amount:',
-        transactionAmount,
-        'vs',
-        maxAmount
-      );
       return false;
     }
 
@@ -155,12 +115,6 @@ export function TransactionsCard({
       categoryFilter &&
       !transaction.category.toLowerCase().includes(categoryFilter.toLowerCase())
     ) {
-      console.log(
-        'Filtered out by category:',
-        transaction.category,
-        'vs',
-        categoryFilter
-      );
       return false;
     }
 
